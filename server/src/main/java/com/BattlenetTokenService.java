@@ -1,3 +1,12 @@
+package com.example.demo;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
+
+import java.time.Instant;
+import java.util.Map;
+
 @Service
 public class BattlenetTokenService {
 
@@ -25,7 +34,7 @@ public class BattlenetTokenService {
     private String fetchNewToken() {
         String tokenUrl = "https://" + region + ".battle.net/oauth/token";
 
-        Map<String, Object> response = webClient.post()
+        Map response = webClient.post()
             .uri(tokenUrl)
             .headers(h -> h.setBasicAuth(clientId, clientSecret))
             .bodyValue("grant_type=client_credentials")

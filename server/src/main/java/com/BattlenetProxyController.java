@@ -1,3 +1,13 @@
+package com.example.demo;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+
+import jakarta.servlet.http.HttpServletRequest;
+
 @RestController
 @RequestMapping("/api/battlenet")
 public class BattlenetProxyController {
