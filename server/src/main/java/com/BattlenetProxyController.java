@@ -1,15 +1,15 @@
 package com.example.demo;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
-import jakarta.servlet.http.HttpServletRequest;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/battlenet")
+@CrossOrigin(origins = "http://localhost:5173")
 public class BattlenetProxyController {
 
     @Value("${battlenet.region}")
@@ -22,19 +22,25 @@ public class BattlenetProxyController {
         this.tokenService = tokenService;
     }
 
-    @GetMapping("/**")
-    public Mono<ResponseEntity<String>> proxy(HttpServletRequest request) {
-        String path = request.getRequestURI().replaceFirst("/api/battlenet", "");
-        String query = request.getQueryString();
+    @GetMapping("/cards/page")
+    public Mono<Map> getCardPage(@RequestParam Map<String, String> params) {
         String token = tokenService.getAccessToken();
+        String host = "https://" + params.getOrDefault("region", region) + ".api.blizzard.com";
 
-        String targetUrl = "https://" + region + ".api.blizzard.com" + path
-            + (query != null ? "?" + query : "");
+        org.springframework.web.util.UriComponentsBuilder builder =
+            org.springframework.web.util.UriComponentsBuilder
+                .fromHttpUrl(host + "/hearthstone/cards");
+
+        params.forEach((key, value) -> {
+            if (!key.equals("region")) {
+                builder.queryParam(key, value);
+            }
+        });
 
         return webClient.get()
-            .uri(targetUrl)
+            .uri(builder.toUriString())
             .header("Authorization", "Bearer " + token)
             .retrieve()
-            .toEntity(String.class);
+            .bodyToMono(Map.class);
     }
 }
