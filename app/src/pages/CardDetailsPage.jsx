@@ -13,7 +13,7 @@ const CardDetailsPage = ({ card, onBackButton }) => {
 
     useEffect(() => {
         const fetchKeywords = async () => {
-            const res = await axios.get('/api/battlenet/metadata/keywords', {
+            const res = await axios.get('/api/battlenet/hearthstone/metadata/keywords', {
                 params: {
                     region: 'us'
                 }

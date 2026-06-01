@@ -45,7 +45,7 @@ const CardListPage = ({ pageSize, onCardClick }) => {
         const fetchPage = async () => {
             const sortValue = isAscending ? `${sortOption}:asc` : `${sortOption}:desc`;
 
-            const res = await axios.get('/api/battlenet/cards/page', {
+            const res = await axios.get('/api/battlenet/hearthstone/cards/page', {
                 params: {
                     region: 'us',
                     page: pageNumber,
@@ -57,9 +57,9 @@ const CardListPage = ({ pageSize, onCardClick }) => {
                 }
             });
             
-            setMaxPages(res.data.pageCount);
-            setCardPage(res.data.cards);
-            if (res.data.cards.length === 0) setCardPage(['N/A']);
+            setMaxPages(res.data.data.pageCount);
+            setCardPage(res.data.data.cards);
+            if (res.data.data.cards.length === 0) setCardPage(['N/A']);
         }
 
         fetchPage();
@@ -103,13 +103,13 @@ const CardListPage = ({ pageSize, onCardClick }) => {
 
     const openModal = async () => {
         if (Object.keys(metadata).length === 0) {
-            const res = await axios.get('/api/battlenet/metadata', {
+            const res = await axios.get('/api/battlenet/hearthstone/metadata', {
                 params: {
                     region: 'us',
                     locale: 'en_US'
                 }
             });
-            setMetadata(res.data);
+            setMetadata(res.data.data);
         }
         setModalIsOpen(true);
     };
