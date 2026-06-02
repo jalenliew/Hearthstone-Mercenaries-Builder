@@ -8,7 +8,7 @@ const HomePage = () => {
                 About
             </h3>
             <p className="text">
-                This app is meant to help build Hearthstone decks.  This app utilizes React, axios, NodeJS, Hearthstone API among other technologies to realize the project.
+                This app is meant to help build Hearthstone decks.  This app utilizes React, axios, Java Spring, Hearthstone API among other technologies to realize the project.
             </p>
             <h3 className="headers">
                 Purpose

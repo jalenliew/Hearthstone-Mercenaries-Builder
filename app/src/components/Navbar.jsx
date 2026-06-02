@@ -3,24 +3,21 @@ import { Outlet, NavLink } from 'react-router-dom';
 import '../styles/components/Navbar.scss';
 
 const Navbar = () => {
-
     return (
-        <div className='navbar'>
-            <NavLink className={({ isActive }) => isActive ? "selected" : "unselected"} to="hearthstone-deckbuilder/">
-                Home
-            </NavLink>
-            <NavLink className={({ isActive }) => isActive ? "selected" : "unselected"} to="hearthstone-deckbuilder/arena">
-                Arena Builder
-            </NavLink>
-            <NavLink className={({ isActive }) => isActive ? "selected" : "unselected"} to="hearthstone-deckbuilder/deck">
-                Deck Builder
-            </NavLink>
-            <NavLink className={({ isActive }) => isActive ? "selected" : "unselected"} to="hearthstone-deckbuilder/cards">
-                Card List
-            </NavLink>
+        <>
+            <header className='HeaderBar'>
+                <h1 className='HeaderBar-title'>
+                    <NavLink className='HeaderBar-link' to="hearthstone-deckbuilder/">Hearthstone Deck Builder</NavLink>
+                </h1>
+                <nav className='Navbar'>
+                    <NavLink className={({ isActive }) => isActive ? 'Navbar-link is-active' : 'Navbar-link'} to="hearthstone-deckbuilder/arena">Arena Builder</NavLink>
+                    <NavLink className={({ isActive }) => isActive ? 'Navbar-link is-active' : 'Navbar-link'} to="hearthstone-deckbuilder/deck">Deck Builder</NavLink>
+                    <NavLink className={({ isActive }) => isActive ? 'Navbar-link is-active' : 'Navbar-link'} to="hearthstone-deckbuilder/cards">Card List</NavLink>
+                </nav>
+            </header>
             <Outlet />
-        </div>)
-    ;
+        </>
+    );
 };
 
 export default Navbar;

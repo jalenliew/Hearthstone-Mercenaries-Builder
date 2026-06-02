@@ -3,36 +3,38 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import axios from '../api/axios';
 import Button from '../components/Button';
-
 import '../styles/pages/CardDetailsPage.scss';
 
-const CardDetailsPage = ({ card, onBackButton }) => {
+const CardDetailsPage = ({ card: cardProp, onBackButton }) => {
     const [keywordData, setKeywordData] = useState([]);
     const location = useLocation();
     const navigate = useNavigate();
 
-    useEffect(() => {
-        const fetchKeywords = async () => {
-            const res = await axios.get('/api/battlenet/hearthstone/metadata/keywords', {
-                params: {
-                    region: 'us'
-                }
-            });
+    const card = cardProp || location.state;
 
-            setKeywordData(
-                res.data.filter((keyword) => {
-                    if (card) {
-                        return card.keywordIds.includes(keyword.id);
-                    } else {
-                        return location.state.keywordIds.includes(keyword.id);
-                    }
-            }));
-        }
-        
-        if ((location.state?.keywordIds?.length > 0) || (card.keywordIds?.length > 0)) {
+    useEffect(() => {
+        if (!card) return;
+
+        const fetchKeywords = async () => {
+            try {
+                const res = await axios.get('/api/battlenet/hearthstone/metadata', {
+                    params: { region: 'us', locale: 'en_US' }
+                });
+                const allKeywords = res.data.data.keywords || [];
+                setKeywordData(
+                    allKeywords.filter((keyword) =>
+                        card.keywordIds?.includes(keyword.id)
+                    )
+                );
+            } catch (err) {
+                console.error('Failed to fetch keywords', err);
+            }
+        };
+
+        if (card.keywordIds?.length > 0) {
             fetchKeywords();
         }
-    }, [location, card]);
+    }, [card]);
 
     const handleBack = () => {
         if (onBackButton) {
@@ -40,31 +42,34 @@ const CardDetailsPage = ({ card, onBackButton }) => {
         } else {
             navigate(-1);
         }
-    }
+    };
 
-    return (
-        <div className='cardDetailsPage' >
-            <Button text='Go Back' onClick={handleBack} />
-            { (location.state?.id) || card ? (
-                <div className='cardDetails'>
-                    <img src={(location.state.image) || (card.image)} alt={(location.state.name) || (card.name)}/>
-                    <div className='keywordWrapper' >
-                        {keywordData?.map((keyword, index) => {
-                            return (
-                                <div key={keyword.name.en_US} className='keyword' >
-                                    <b>{keyword.name.en_US}</b>
-                                    <p>{keyword.refText.en_US}</p>
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            ) : (
+    if (!card) {
+        return (
+            <div className='cardDetailsPage'>
+                <Button text='Go Back' onClick={handleBack} />
                 <div>
                     <p>Invalid Data</p>
                     <Link to='..'>Click here to go back</Link>
                 </div>
-            )}
+            </div>
+        );
+    }
+
+    return (
+        <div className='cardDetailsPage'>
+            <Button text='Go Back' onClick={handleBack} />
+            <div className='cardDetails'>
+                <img src={card.image} alt={card.name} />
+                <div className='keywordWrapper'>
+                    {keywordData.map((keyword) => (
+                        <div key={keyword.id} className='keyword'>
+                            <b>{keyword.name}</b>
+                            <p>{keyword.refText}</p>
+                        </div>
+                    ))}
+                </div>
+            </div>
         </div>
     );
 };

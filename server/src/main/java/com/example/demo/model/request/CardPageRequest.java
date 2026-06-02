@@ -14,18 +14,18 @@ public class CardPageRequest extends HearthstoneRequest {
 
     @Min(value = 1)
     @Max(value = 500)
-    private Integer pageSize;
+    private Integer pageSize = 16;
 
     @Pattern(regexp = "^(name|manaCost|attack|health|class):(asc|desc)$")
-    private String sort;
+    private String sort = "name:asc";
 
     private String textFilter;
-    private String set;
+    private String set = "standard";
     private String cardClass;
     private String manaCost;
     private String attack;
     private String health;
-    private String collectible;
+    private String collectible = "1";
     private String rarity;
     private String type;
     private String minionType;
