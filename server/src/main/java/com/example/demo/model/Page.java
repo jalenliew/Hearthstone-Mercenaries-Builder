@@ -1,4 +1,4 @@
-package com.example.demo.model.response;
+package com.example.demo.model;
 
 import com.example.demo.model.Card;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
@@ -7,7 +7,7 @@ import java.util.List;
 
 @Data
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class CardPage {
+public class Page {
     private List<Card> cards;
     private int cardCount;
     private int pageCount;

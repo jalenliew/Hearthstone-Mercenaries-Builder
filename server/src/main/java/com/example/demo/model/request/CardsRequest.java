@@ -6,7 +6,9 @@ import lombok.Setter;
 
 @Getter
 @Setter
-public class CardPageRequest extends HearthstoneRequest {
+public class CardsRequest extends HearthstoneRequest {
+    @Pattern(regexp = "constructed|battlegrounds|mercenaries", message = "Invalid game mode")
+    private String gameMode = "constructed";
 
     @NotNull(message = "page is required")
     @Min(value = 1, message = "page must be at least 1")
@@ -16,7 +18,7 @@ public class CardPageRequest extends HearthstoneRequest {
     @Max(value = 500)
     private Integer pageSize = 16;
 
-    @Pattern(regexp = "^(name|manaCost|attack|health|class):(asc|desc)$")
+    @Pattern(regexp = "^(name|manaCost|attack|health|class|dateAdded):(asc|desc)$")
     private String sort = "name:asc";
 
     private String textFilter;

@@ -9,9 +9,8 @@ import lombok.Setter;
 @Setter
 public abstract class BaseRequest {
 
-    @NotBlank(message = "region is required")
     @Pattern(regexp = "us|eu|kr|tw|cn", message = "Invalid region")
-    private String region;
+    private String region = "us";
 
     private String locale;
 }
