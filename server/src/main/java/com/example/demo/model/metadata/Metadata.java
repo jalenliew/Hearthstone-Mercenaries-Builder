@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -13,5 +14,5 @@ import lombok.NoArgsConstructor;
 public class Metadata {
     private String slug;
     private int id;
-    private String name;
+    private Map<String, String> name;
 }

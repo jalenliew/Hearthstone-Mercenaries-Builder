@@ -3,8 +3,10 @@ $pagination-height: 3rem;
 
 .CardList {
     height: calc(100vh - var(--navbar-height));
-    display: grid;
-    grid-template-rows: auto 1fr auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    // grid-template-rows: auto 1fr auto;
     width: 100%;
     box-sizing: border-box;
     overflow: hidden;
@@ -12,12 +14,13 @@ $pagination-height: 3rem;
 
 .CardList-controls {
     display: flex;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
-    padding: 0.5rem 2rem;
     height: $controls-height;
     flex-shrink: 0;
     box-sizing: border-box;
+    width: 50%;
+    margin: auto;
 }
 
 .CardList-sort {

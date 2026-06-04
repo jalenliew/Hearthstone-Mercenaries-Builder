@@ -10,10 +10,11 @@ import lombok.NoArgsConstructor;
 @Setter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class Set extends Metadata {
+public class CardSet extends Metadata {
     private boolean hyped;
     private String type;
     private int collectibleCount;
+    private int collectibleRevealedCount;
     private int nonCollectibleCount;
     private int nonCollectibleRevealedCount;
 }

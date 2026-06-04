@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../api/axios';
 import Select from 'react-select';
 import Button from '../components/Button';
-import Modal from 'react-modal';
 import Searchbar from '../components/Searchbar';
+import FilterModal from '../components/FilterModal';
 import '../styles/pages/CardListPage.scss';
 
 const PREFETCH_NEIGHBORS = 2;
@@ -34,11 +34,13 @@ const CardListPage = ({ pageSize, onCardClick }) => {
     const navigate = useNavigate();
 
     const sortOptions = [
-        { value: 'name', label: 'NAME' },
-        { value: 'manaCost', label: 'MANACOST' },
-        { value: 'attack', label: 'ATTACK' },
-        { value: 'health', label: 'HEALTH' },
-        { value: 'class', label: 'CLASS' },
+        { value: 'name', label: 'Name' },
+        { value: 'manaCost', label: 'Mana Cost' },
+        { value: 'attack', label: 'Attack' },
+        { value: 'health', label: 'Health' },
+        { value: 'dateAdded', label: 'Date Added'},
+        { value: 'class', label: 'Class' },
+        { value: 'groupByClass', label: 'Group By Class'},
     ];
 
     const buildParams = useCallback((page) => ({
@@ -214,7 +216,10 @@ const CardListPage = ({ pageSize, onCardClick }) => {
 
     return (
         <div className='CardList'>
-            <Modal
+            <FilterModal text='test' onClick={() => console.log("Working")} >
+
+            </FilterModal>
+            {/* <Modal
                 isOpen={modalIsOpen}
                 className='CardFilter'
                 ariaHideApp={false}
@@ -270,7 +275,7 @@ const CardListPage = ({ pageSize, onCardClick }) => {
                     <Button text='Reset' onClick={handleFilterReset} />
                     <Button text='Apply' onClick={handleFilterApply} />
                 </div>
-            </Modal>
+            </Modal> */}
 
             <div className='CardList-controls'>
                 <div className='CardList-sort'>
