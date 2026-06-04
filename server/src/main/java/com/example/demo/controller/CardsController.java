@@ -1,7 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.model.Card;
-import com.example.demo.model.Page;
+import com.example.demo.model.card.*;
 import com.example.demo.model.response.ApiResponse;
 import com.example.demo.model.request.CardsRequest;
 import com.example.demo.service.BattlenetTokenService;

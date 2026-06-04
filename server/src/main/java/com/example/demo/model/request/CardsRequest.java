@@ -18,7 +18,7 @@ public class CardsRequest extends HearthstoneRequest {
     @Max(value = 500)
     private Integer pageSize = 16;
 
-    @Pattern(regexp = "^(name|manaCost|attack|health|class|dateAdded):(asc|desc)$")
+    @Pattern(regexp = "^(name|manaCost|attack|health|class|dateAdded|groupByClass):(asc|desc)$")
     private String sort = "name:asc";
 
     private String textFilter;

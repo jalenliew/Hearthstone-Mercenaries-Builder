@@ -17,20 +17,22 @@ public class TestController extends BattlenetController {
     }
 
     @GetMapping("/raw")
-    public Mono<Map> raw(@RequestParam String path, @RequestParam Map<String, String> params) {
+    public Mono<Object> raw(@RequestParam String path, @RequestParam Map<String, String> params) {
         String region = params.getOrDefault("region", defaultRegion);
 
         UriComponentsBuilder builder = UriComponentsBuilder
             .fromHttpUrl(getHost(region) + path);
 
         params.forEach((key, value) -> {
-            if (!key.equals("region") && !key.equals("path")) builder.queryParam(key, value);
+            if (!key.equals("region") && !key.equals("path")) {
+                builder.queryParam(key, value);
+            }
         });
 
         return webClient.get()
             .uri(builder.toUriString())
             .header("Authorization", "Bearer " + tokenService.getAccessToken())
             .retrieve()
-            .bodyToMono(Map.class);
+            .bodyToMono(Object.class);
     }
 }

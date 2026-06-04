@@ -1,4 +1,4 @@
-package com.example.demo.model;
+package com.example.demo.model.card;
 
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
