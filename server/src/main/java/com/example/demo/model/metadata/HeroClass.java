@@ -11,6 +11,8 @@ import java.util.List;
 @Setter
 @NoArgsConstructor
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class MetadataWithGameModes extends Metadata {
-    private List<Integer> gameModes;
+public class HeroClass extends Metadata {
+    private int cardId;
+    private int heroPowerCardId;
+    private List<Integer> alternateHeroCardIds;
 }

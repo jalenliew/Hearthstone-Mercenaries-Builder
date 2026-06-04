@@ -1,140 +1,200 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import Modal from 'react-modal';
 import axios from '../api/axios';
 import Button from '../components/Button';
-import Modal from 'react-modal';
-import Select from 'react-select';
 import '../styles/components/FilterModal.scss';
 
-const FilterModal = ({ text, onClick }) => {
-    const [modalIsOpen, setModalIsOpen] = useState(false);
-    const [gameMode, setGameMode] = useState("constructed");
-    const [cardSets, setCardSets] = useState([]);
-    const [metadata, setMetadata] = useState({});
-    
-    const fetchMetadata = useCallback(async (type) => {
-        const res = await axios.get('/api/battlenet/hearthstone/metadata', {
-            params: type
-        });
-        const data = res.data.data;
-        setMetadata(data);
-        return data;
-    }, [gameMode]);
+const STAT_RANGES = {
+    manaCost: [0, 30],
+    attack: [0, 20],
+    health: [1, 20],
+};
 
-    useEffect(() => {
-        const res = fetchMetadata("");
+const FilterModal = ({ isOpen, onClose, onApply, onReset, gameMode = 'constructed' }) => {
+    const [sets, setSets] = useState([]);
+    const [classes, setClasses] = useState([]);
+    const [rarities, setRarities] = useState([]);
+    const [types, setTypes] = useState([]);
+    const [minionTypes, setMinionTypes] = useState([]);
+    const [keywords, setKeywords] = useState([]);
+
+    const [selectedSets, setSelectedSets] = useState([]);
+    const [selectedClasses, setSelectedClasses] = useState([]);
+    const [selectedRarities, setSelectedRarities] = useState([]);
+    const [selectedTypes, setSelectedTypes] = useState([]);
+    const [selectedMinionTypes, setSelectedMinionTypes] = useState([]);
+    const [selectedKeywords, setSelectedKeywords] = useState([]);
+    const [collectible, setCollectible] = useState('1');
+    const [statsRange, setStatsRange] = useState({
+        manaCost: [0, 30],
+        attack: [0, 20],
+        health: [1, 20],
+    });
+
+    const fetchMetadata = useCallback(async (type, setter) => {
+        try {
+            const res = await axios.get(`/api/battlenet/hearthstone/metadata/${type}`, {
+                params: { region: 'us', locale: 'en_US' }
+            });
+            setter(res.data.data || []);
+        } catch (err) {
+            console.error(`Failed to fetch metadata/${type}`, err);
+        }
     }, []);
 
-    const openModal = async () => {
-        if (Object.keys(metadata).length === 0) {
-            try {
-                const res = await axios.get('/api/battlenet/hearthstone/metadata', {
-                    params: { region: 'us', locale: 'en_US' }
-                });
-                setMetadata(res.data.data);
-            } catch (err) {
-                console.error('Failed to fetch metadata', err);
-            }
+    useEffect(() => {
+        if (!isOpen) return;
+        if (sets.length === 0) fetchMetadata('sets', setSets);
+        if (classes.length === 0) fetchMetadata('classes', setClasses);
+        if (rarities.length === 0) fetchMetadata('rarities', setRarities);
+        if (types.length === 0) fetchMetadata('types', setTypes);
+        if (minionTypes.length === 0) fetchMetadata('minionTypes', setMinionTypes);
+        if (keywords.length === 0) fetchMetadata('keywords', setKeywords);
+    }, [isOpen]);
+
+    const toggleItem = (list, setList, slug) => {
+        setList(list.includes(slug)
+            ? list.filter(s => s !== slug)
+            : [...list, slug]
+        );
+    };
+
+    const handleStatChange = (stat, index, value) => {
+        const parsed = parseInt(value);
+        if (isNaN(parsed)) return;
+        const [min, max] = statsRange[stat];
+        const [absMin, absMax] = STAT_RANGES[stat];
+        const newRange = [...statsRange[stat]];
+
+        if (index === 0) {
+            newRange[0] = Math.min(Math.max(parsed, absMin), max);
+        } else {
+            newRange[1] = Math.max(Math.min(parsed, absMax), min);
         }
-        setModalIsOpen(true);
+        setStatsRange({ ...statsRange, [stat]: newRange });
     };
 
-    const closeModal = () => setModalIsOpen(false);
-
-        const handleFilterApply = () => {
-        let selectValues = {};
-        Object.keys(selectedOptions).forEach((param) => {
-            selectValues[param] = selectedOptions[param].map(v => v.slug);
-        });
-        let collectibleVal;
-        if (collectible === 't') collectibleVal = [0, 1];
-        else if (collectible === 'o') collectibleVal = 0;
-
-        let statsValues = { manaCost: [], attack: [], health: [] };
-        Object.keys(statsRange).forEach((stat) => {
-            for (let i = statsRange[stat][0], j = 0; i < statsRange[stat][1]; i++, j++) {
-                statsValues[stat][j] = i;
-            }
-        });
-
-        setFilterParams({ ...selectValues, collectible: collectibleVal, ...statsValues });
-        setPageNumber(1);
-        setModalIsOpen(false);
-    };
-
-    const handleFilterReset = () => {
-        setFilterParams({});
-        setSelectedOptions({ set: [], class: [], rarity: [], type: [], minionType: [], keyword: [] });
-        setCollectible('f');
+    const handleReset = () => {
+        setSelectedSets([]);
+        setSelectedClasses([]);
+        setSelectedRarities([]);
+        setSelectedTypes([]);
+        setSelectedMinionTypes([]);
+        setSelectedKeywords([]);
+        setCollectible('1');
         setStatsRange({
-            manaCost: [0, 30, 0, 30],
-            attack: [0, 20, 0, 20],
-            health: [1, 20, 1, 20]
+            manaCost: [0, 30],
+            attack: [0, 20],
+            health: [1, 20],
         });
-        setPageNumber(1);
+        onReset?.();
     };
 
-    return(
-            <Modal
-                isOpen={modalIsOpen}
-                className='CardFilter'
-                ariaHideApp={false}
-            >
-                <h4 className='CardFilter-title'>Advanced Filters</h4>
-                <div className='CardFilter-body'>
-                    <div className='CardFilter-set'>
-                        <label htmlFor='setSelect'>Set:</label>
-                        <Button id='setSelect' onClick={(e) => {console.log(e)}} ></Button>
-                    </div>
-                    {/* <div className='CardFilter-selectRow'>
-                        <label htmlFor='setSelect'>Set:</label>
-                        <Select options={metadata.sets?.map(s => ({ ...s, label: s.name, value: s.slug }))} onChange={(e) => handleSelectOption('set', e)} value={selectedOptions.set} isMulti className='CardFilter-select' id='setSelect' />
-                    </div>
-                    <div className='CardFilter-selectRow'>
-                        <label htmlFor='classSelect'>Class:</label>
-                        <Select options={metadata.classes?.map(c => ({ ...c, label: c.name, value: c.slug }))} onChange={(e) => handleSelectOption('class', e)} value={selectedOptions.class} isMulti className='CardFilter-select' id='classSelect' />
-                    </div> */}
-                    {/* <div className='CardFilter-stats'>
-                        {['manaCost', 'attack', 'health'].map(stat => (
-                            <div key={stat} className='CardFilter-statRow'>
-                                <input type='number' id={`${stat}Min`} value={isNaN(statsRange[stat][0]) ? '' : statsRange[stat][0]} onChange={() => handleStats(`${stat}Min`)} />
-                                <p>&le; {stat.toUpperCase()} &le;</p>
-                                <input type='number' id={`${stat}Max`} value={isNaN(statsRange[stat][1]) ? '' : statsRange[stat][1]} onChange={() => handleStats(`${stat}Max`)} />
-                                <Button text='Reset' onClick={() => handleStatsReset(stat)}></Button>
-                            </div>
+    const handleApply = () => {
+        const filters = {
+            set: selectedSets,
+            cardClass: selectedClasses,
+            rarity: selectedRarities,
+            type: selectedTypes,
+            minionType: selectedMinionTypes,
+            keyword: selectedKeywords,
+            collectible,
+            manaCost: rangeToArray(statsRange.manaCost, STAT_RANGES.manaCost),
+            attack: rangeToArray(statsRange.attack, STAT_RANGES.attack),
+            health: rangeToArray(statsRange.health, STAT_RANGES.health),
+        };
+        onApply(filters);
+        onClose();
+    };
+
+    const rangeToArray = ([min, max], [absMin, absMax]) => {
+        if (min === absMin && max === absMax) return undefined;
+        return Array.from({ length: max - min }, (_, i) => min + i);
+    };
+
+    const ChipGroup = ({ label, items, selected, onToggle }) => (
+        <div className='FilterModal-section'>
+            <h5 className='FilterModal-sectionTitle'>{label}</h5>
+            <div className='FilterModal-chipGrid'>
+                {items.map(item => (
+                    <button
+                        key={item.slug}
+                        className={`FilterModal-chip ${selected.includes(item.slug) ? 'is-selected' : ''}`}
+                        onClick={() => onToggle(item.slug)}
+                    >
+                        {item.name.value}
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
+
+    return (
+        <Modal isOpen={isOpen} className='FilterModal' overlayClassName='FilterModal-overlay' ariaHideApp={false}>
+            <div className='FilterModal-header'>
+                <h4 className='FilterModal-title'>Filters</h4>
+                <button className='FilterModal-close' onClick={onClose}>✕</button>
+            </div>
+
+            <div className='FilterModal-body'>
+                <ChipGroup label='Set' items={sets} selected={selectedSets} onToggle={(slug) => toggleItem(selectedSets, setSelectedSets, slug)} />
+                <ChipGroup label='Class' items={classes} selected={selectedClasses} onToggle={(slug) => toggleItem(selectedClasses, setSelectedClasses, slug)} />
+                <ChipGroup label='Rarity' items={rarities} selected={selectedRarities} onToggle={(slug) => toggleItem(selectedRarities, setSelectedRarities, slug)} />
+                <ChipGroup label='Type' items={types} selected={selectedTypes} onToggle={(slug) => toggleItem(selectedTypes, setSelectedTypes, slug)} />
+                <ChipGroup label='Minion Type' items={minionTypes} selected={selectedMinionTypes} onToggle={(slug) => toggleItem(selectedMinionTypes, setSelectedMinionTypes, slug)} />
+                <ChipGroup label='Keyword' items={keywords} selected={selectedKeywords} onToggle={(slug) => toggleItem(selectedKeywords, setSelectedKeywords, slug)} />
+
+                <div className='FilterModal-section'>
+                    <h5 className='FilterModal-sectionTitle'>Collectible</h5>
+                    <div className='FilterModal-chipGrid'>
+                        {[['1', 'Collectible Only'], ['0', 'Non-Collectible Only'], ['', 'Both']].map(([val, label]) => (
+                            <button
+                                key={val}
+                                className={`FilterModal-chip ${collectible === val ? 'is-selected' : ''}`}
+                                onClick={() => setCollectible(val)}
+                            >
+                                {label}
+                            </button>
                         ))}
                     </div>
-                    <div className='CardFilter-collectible'>
-                        <p>Show Non-Collectible Cards:</p>
-                        {[['t', 'True'], ['f', 'False'], ['o', 'Only Non-Collectible']].map(([val, label]) => (
-                            <React.Fragment key={val}>
-                                <input type='radio' id={`collectible_${val}`} checked={collectible === val} onChange={() => setCollectible(val)} />
-                                <label htmlFor={`collectible_${val}`}>{label}</label>
-                            </React.Fragment>
-                        ))}
-                    </div> */}
-                    {/* <div className='CardFilter-selectRow'>
-                        <label htmlFor='raritySelect'>Rarity:</label>
-                        <Select options={metadata.rarities?.map(r => ({ ...r, label: r.name, value: r.slug }))} onChange={(e) => handleSelectOption('rarity', e)} value={selectedOptions.rarity} isMulti className='CardFilter-select' id='raritySelect' />
-                    </div>
-                    <div className='CardFilter-selectRow'>
-                        <label htmlFor='typeSelect'>Type:</label>
-                        <Select options={metadata.types?.map(t => ({ ...t, label: t.name, value: t.slug }))} onChange={(e) => handleSelectOption('type', e)} value={selectedOptions.type} isMulti className='CardFilter-select' id='typeSelect' />
-                    </div>
-                    <div className='CardFilter-selectRow'>
-                        <label htmlFor='minionTypeSelect'>Minion Type:</label>
-                        <Select options={metadata.minionTypes?.map(m => ({ ...m, label: m.name, value: m.slug }))} onChange={(e) => handleSelectOption('minionType', e)} value={selectedOptions.minionType} isMulti className='CardFilter-select' id='minionTypeSelect' />
-                    </div>
-                    <div className='CardFilter-selectRow'>
-                        <label htmlFor='keywordSelect'>Keyword:</label>
-                        <Select options={metadata.keywords?.map(k => ({ ...k, label: k.name, value: k.slug }))} onChange={(e) => handleSelectOption('keyword', e)} value={selectedOptions.keyword} isMulti className='CardFilter-select' id='keywordSelect' />
-                    </div> */}
                 </div>
-                <div className='CardFilter-actions'>
-                    <Button text='Cancel' onClick={closeModal} />
-                    <Button text='Reset' onClick={handleFilterReset} />
-                    <Button text='Apply' onClick={handleFilterApply} />
-                </div>
-            </Modal>
+
+                {['manaCost', 'attack', 'health'].map(stat => (
+                    <div key={stat} className='FilterModal-section'>
+                        <h5 className='FilterModal-sectionTitle'>{stat.charAt(0).toUpperCase() + stat.slice(1)}</h5>
+                        <div className='FilterModal-statRow'>
+                            <input
+                                type='number'
+                                value={statsRange[stat][0]}
+                                min={STAT_RANGES[stat][0]}
+                                max={statsRange[stat][1]}
+                                onChange={(e) => handleStatChange(stat, 0, e.target.value)}
+                            />
+                            <span>to</span>
+                            <input
+                                type='number'
+                                value={statsRange[stat][1]}
+                                min={statsRange[stat][0]}
+                                max={STAT_RANGES[stat][1]}
+                                onChange={(e) => handleStatChange(stat, 1, e.target.value)}
+                            />
+                            <button
+                                className='FilterModal-resetStat'
+                                onClick={() => setStatsRange({ ...statsRange, [stat]: [...STAT_RANGES[stat]] })}
+                            >
+                                Reset
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
+
+            <div className='FilterModal-actions'>
+                <Button text='Cancel' onClick={onClose} />
+                <Button text='Reset All' onClick={handleReset} />
+                <Button text='Apply' onClick={handleApply} />
+            </div>
+        </Modal>
     );
 };
 

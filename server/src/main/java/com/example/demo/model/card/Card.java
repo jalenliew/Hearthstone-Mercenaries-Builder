@@ -1,5 +1,6 @@
 package com.example.demo.model.card;
 
+import com.example.demo.model.LocalizedString;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Getter;
@@ -24,11 +25,11 @@ public class Card {
     private int health;
     private int attack;
     private int manaCost;
-    private String name;
-    private String text;
-    private String image;
-    private String imageGold;
-    private String flavorText;
+    private LocalizedString name;
+    private LocalizedString text;
+    private LocalizedString image;
+    private LocalizedString imageGold;
+    private LocalizedString flavorText;
     private String cropImage;
     private List<Integer> childIds;
     private List<Integer> keywordIds;

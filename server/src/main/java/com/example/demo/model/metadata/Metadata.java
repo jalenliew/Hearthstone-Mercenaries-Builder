@@ -1,5 +1,6 @@
 package com.example.demo.model.metadata;
 
+import com.example.demo.model.LocalizedString;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -14,5 +15,5 @@ import java.util.Map;
 public class Metadata {
     private String slug;
     private int id;
-    private Map<String, String> name;
+    private LocalizedString name;
 }
