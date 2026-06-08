@@ -1,133 +1,114 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import Modal from 'react-modal';
 import axios from '../api/axios';
 import Button from '../components/Button';
 import '../styles/components/FilterModal.scss';
 
-const STAT_RANGES = {
-    manaCost: [0, 30],
-    attack: [0, 20],
-    health: [1, 20],
-};
-
 const FilterModal = ({ isOpen, onClose, onApply, onReset, gameMode = 'constructed' }) => {
-    const [sets, setSets] = useState([]);
-    const [classes, setClasses] = useState([]);
-    const [rarities, setRarities] = useState([]);
-    const [types, setTypes] = useState([]);
-    const [minionTypes, setMinionTypes] = useState([]);
-    const [keywords, setKeywords] = useState([]);
-
-    const [selectedSets, setSelectedSets] = useState([]);
-    const [selectedClasses, setSelectedClasses] = useState([]);
-    const [selectedRarities, setSelectedRarities] = useState([]);
-    const [selectedTypes, setSelectedTypes] = useState([]);
-    const [selectedMinionTypes, setSelectedMinionTypes] = useState([]);
-    const [selectedKeywords, setSelectedKeywords] = useState([]);
+    const [filterOptions, setFilterOptions] = useState(null);
+    const [selectedChips, setSelectedChips] = useState({});
+    const [numericValues, setNumericValues] = useState({});
     const [collectible, setCollectible] = useState('1');
-    const [statsRange, setStatsRange] = useState({
-        manaCost: [0, 30],
-        attack: [0, 20],
-        health: [1, 20],
-    });
-
-    const fetchMetadata = useCallback(async (type, setter) => {
-        try {
-            const res = await axios.get(`/api/battlenet/hearthstone/metadata/${type}`, {
-                params: { region: 'us', locale: 'en_US' }
-            });
-            setter(res.data.data || []);
-        } catch (err) {
-            console.error(`Failed to fetch metadata/${type}`, err);
-        }
-    }, []);
+    const hasFetched = useRef(false);
 
     useEffect(() => {
-        if (!isOpen) return;
-        if (sets.length === 0) fetchMetadata('sets', setSets);
-        if (classes.length === 0) fetchMetadata('classes', setClasses);
-        if (rarities.length === 0) fetchMetadata('rarities', setRarities);
-        if (types.length === 0) fetchMetadata('types', setTypes);
-        if (minionTypes.length === 0) fetchMetadata('minionTypes', setMinionTypes);
-        if (keywords.length === 0) fetchMetadata('keywords', setKeywords);
-    }, [isOpen]);
+        if (!isOpen || hasFetched.current) return;
+        const fetchOptions = async () => {
+            try {
+                const res = await axios.get('/api/battlenet/hearthstone/metadata/filterOptions', {
+                    params: { region: 'us', locale: 'en_US', gameMode }
+                });
+                const data = res.data.data;
+                setFilterOptions(data);
 
-    const toggleItem = (list, setList, slug) => {
-        setList(list.includes(slug)
-            ? list.filter(s => s !== slug)
-            : [...list, slug]
-        );
+                const initNumeric = {};
+                data.numericFields.forEach(({ field, min, max }) => {
+                    initNumeric[field] = [min, max];
+                });
+                setNumericValues(initNumeric);
+
+                const initChips = {};
+                data.selectableFields.forEach(({ field }) => {
+                    initChips[field] = [];
+                });
+                setSelectedChips(initChips);
+
+                hasFetched.current = true;
+            } catch (err) {
+                console.error('Failed to fetch filter options', err);
+            }
+        };
+        fetchOptions();
+    }, [isOpen, gameMode]);
+
+    const toggleChip = (field, slug) => {
+        const current = selectedChips[field] || [];
+        setSelectedChips({
+            ...selectedChips,
+            [field]: current.includes(slug)
+                ? current.filter(s => s !== slug)
+                : [...current, slug]
+        });
     };
 
-    const handleStatChange = (stat, index, value) => {
+    const handleSliderChange = (field, index, value) => {
         const parsed = parseInt(value);
         if (isNaN(parsed)) return;
-        const [min, max] = statsRange[stat];
-        const [absMin, absMax] = STAT_RANGES[stat];
-        const newRange = [...statsRange[stat]];
+        const bounds = filterOptions.numericFields.find(f => f.field === field);
+        const [currentMin, currentMax] = numericValues[field];
+        const newRange = [...numericValues[field]];
 
         if (index === 0) {
-            newRange[0] = Math.min(Math.max(parsed, absMin), max);
+            newRange[0] = Math.min(Math.max(parsed, bounds.min), currentMax);
         } else {
-            newRange[1] = Math.max(Math.min(parsed, absMax), min);
+            newRange[1] = Math.max(Math.min(parsed, bounds.max), currentMin);
         }
-        setStatsRange({ ...statsRange, [stat]: newRange });
+        setNumericValues({ ...numericValues, [field]: newRange });
     };
 
     const handleReset = () => {
-        setSelectedSets([]);
-        setSelectedClasses([]);
-        setSelectedRarities([]);
-        setSelectedTypes([]);
-        setSelectedMinionTypes([]);
-        setSelectedKeywords([]);
-        setCollectible('1');
-        setStatsRange({
-            manaCost: [0, 30],
-            attack: [0, 20],
-            health: [1, 20],
+        const initNumeric = {};
+        filterOptions?.numericFields.forEach(({ field, min, max }) => {
+            initNumeric[field] = [min, max];
         });
+        const initChips = {};
+        filterOptions?.selectableFields.forEach(({ field }) => {
+            initChips[field] = [];
+        });
+        setNumericValues(initNumeric);
+        setSelectedChips(initChips);
+        setCollectible('1');
         onReset?.();
     };
 
     const handleApply = () => {
-        const filters = {
-            set: selectedSets,
-            cardClass: selectedClasses,
-            rarity: selectedRarities,
-            type: selectedTypes,
-            minionType: selectedMinionTypes,
-            keyword: selectedKeywords,
-            collectible,
-            manaCost: rangeToArray(statsRange.manaCost, STAT_RANGES.manaCost),
-            attack: rangeToArray(statsRange.attack, STAT_RANGES.attack),
-            health: rangeToArray(statsRange.health, STAT_RANGES.health),
-        };
+        const filters = { collectible };
+
+        Object.entries(selectedChips).forEach(([field, slugs]) => {
+            if (slugs.length > 0) filters[field] = slugs;
+        });
+
+        filterOptions?.numericFields.forEach(({ field, min, max }) => {
+            const [selectedMin, selectedMax] = numericValues[field] || [min, max];
+            if (selectedMin !== min || selectedMax !== max) {
+                filters[field] = rangeToArray(selectedMin, selectedMax);
+            }
+        });
+
         onApply(filters);
         onClose();
     };
 
-    const rangeToArray = ([min, max], [absMin, absMax]) => {
-        if (min === absMin && max === absMax) return undefined;
-        return Array.from({ length: max - min }, (_, i) => min + i);
-    };
+    const rangeToArray = (min, max) =>
+        Array.from({ length: max - min + 1 }, (_, i) => min + i);
 
-    const ChipGroup = ({ label, items, selected, onToggle }) => (
-        <div className='FilterModal-section'>
-            <h5 className='FilterModal-sectionTitle'>{label}</h5>
-            <div className='FilterModal-chipGrid'>
-                {items.map(item => (
-                    <button
-                        key={item.slug}
-                        className={`FilterModal-chip ${selected.includes(item.slug) ? 'is-selected' : ''}`}
-                        onClick={() => onToggle(item.slug)}
-                    >
-                        {item.name.value}
-                    </button>
-                ))}
-            </div>
-        </div>
-    );
+    if (!filterOptions) {
+        return (
+            <Modal isOpen={isOpen} className='FilterModal' overlayClassName='FilterModal-overlay' ariaHideApp={false}>
+                <div className='FilterModal-loading'>Loading filters...</div>
+            </Modal>
+        );
+    }
 
     return (
         <Modal isOpen={isOpen} className='FilterModal' overlayClassName='FilterModal-overlay' ariaHideApp={false}>
@@ -137,19 +118,13 @@ const FilterModal = ({ isOpen, onClose, onApply, onReset, gameMode = 'constructe
             </div>
 
             <div className='FilterModal-body'>
-                <ChipGroup label='Set' items={sets} selected={selectedSets} onToggle={(slug) => toggleItem(selectedSets, setSelectedSets, slug)} />
-                <ChipGroup label='Class' items={classes} selected={selectedClasses} onToggle={(slug) => toggleItem(selectedClasses, setSelectedClasses, slug)} />
-                <ChipGroup label='Rarity' items={rarities} selected={selectedRarities} onToggle={(slug) => toggleItem(selectedRarities, setSelectedRarities, slug)} />
-                <ChipGroup label='Type' items={types} selected={selectedTypes} onToggle={(slug) => toggleItem(selectedTypes, setSelectedTypes, slug)} />
-                <ChipGroup label='Minion Type' items={minionTypes} selected={selectedMinionTypes} onToggle={(slug) => toggleItem(selectedMinionTypes, setSelectedMinionTypes, slug)} />
-                <ChipGroup label='Keyword' items={keywords} selected={selectedKeywords} onToggle={(slug) => toggleItem(selectedKeywords, setSelectedKeywords, slug)} />
 
                 <div className='FilterModal-section'>
                     <h5 className='FilterModal-sectionTitle'>Collectible</h5>
                     <div className='FilterModal-chipGrid'>
                         {[['1', 'Collectible Only'], ['0', 'Non-Collectible Only'], ['', 'Both']].map(([val, label]) => (
                             <button
-                                key={val}
+                                key={label}
                                 className={`FilterModal-chip ${collectible === val ? 'is-selected' : ''}`}
                                 onClick={() => setCollectible(val)}
                             >
@@ -159,34 +134,71 @@ const FilterModal = ({ isOpen, onClose, onApply, onReset, gameMode = 'constructe
                     </div>
                 </div>
 
-                {['manaCost', 'attack', 'health'].map(stat => (
-                    <div key={stat} className='FilterModal-section'>
-                        <h5 className='FilterModal-sectionTitle'>{stat.charAt(0).toUpperCase() + stat.slice(1)}</h5>
-                        <div className='FilterModal-statRow'>
-                            <input
-                                type='number'
-                                value={statsRange[stat][0]}
-                                min={STAT_RANGES[stat][0]}
-                                max={statsRange[stat][1]}
-                                onChange={(e) => handleStatChange(stat, 0, e.target.value)}
-                            />
-                            <span>to</span>
-                            <input
-                                type='number'
-                                value={statsRange[stat][1]}
-                                min={statsRange[stat][0]}
-                                max={STAT_RANGES[stat][1]}
-                                onChange={(e) => handleStatChange(stat, 1, e.target.value)}
-                            />
-                            <button
-                                className='FilterModal-resetStat'
-                                onClick={() => setStatsRange({ ...statsRange, [stat]: [...STAT_RANGES[stat]] })}
-                            >
-                                Reset
-                            </button>
+                {filterOptions.selectableFields.map(({ field, label, options }) => (
+                    <div key={field} className='FilterModal-section'>
+                        <h5 className='FilterModal-sectionTitle'>{label.value}</h5>
+                        <div className='FilterModal-chipGrid'>
+                            {options.map(option => (
+                                <button
+                                    key={option.slug}
+                                    className={`FilterModal-chip ${selectedChips[field]?.includes(option.slug) ? 'is-selected' : ''}`}
+                                    onClick={() => toggleChip(field, option.slug)}
+                                >
+                                    {option.name.value}
+                                </button>
+                            ))}
                         </div>
                     </div>
                 ))}
+
+                {filterOptions.numericFields.map(({ field, label, min, max }) => {
+                    const [currentMin, currentMax] = numericValues[field] || [min, max];
+                    const range = max - min || 1;
+                    return (
+                        <div key={field} className='FilterModal-section'>
+                            <h5 className='FilterModal-sectionTitle'>
+                                {label.value}
+                                <span className='FilterModal-sliderValue'>{currentMin} - {currentMax}</span>
+                            </h5>
+                            <div className='FilterModal-sliderWrapper'>
+                                <div
+                                    className='FilterModal-sliderTrack'
+                                    style={{
+                                        '--range-left': `${((currentMin - min) / range) * 100}%`,
+                                        '--range-right': `${((max - currentMax) / range) * 100}%`
+                                    }}
+                                />
+                                <input
+                                    type='range'
+                                    className='FilterModal-slider FilterModal-slider--min'
+                                    min={min}
+                                    max={max}
+                                    value={currentMin}
+                                    onChange={(e) => handleSliderChange(field, 0, e.target.value)}
+                                />
+                                <input
+                                    type='range'
+                                    className='FilterModal-slider FilterModal-slider--max'
+                                    min={min}
+                                    max={max}
+                                    value={currentMax}
+                                    onChange={(e) => handleSliderChange(field, 1, e.target.value)}
+                                />
+                            </div>
+                            <div className='FilterModal-sliderOddEven'>
+                                <button
+                                    className={`FilterModal-chip FilterModal-chip--small`}
+                                    onClick={() => setNumericValues({
+                                        ...numericValues,
+                                        [field]: [min, max]
+                                    })}
+                                >
+                                    All
+                                </button>
+                            </div>
+                        </div>
+                    );
+                })}
             </div>
 
             <div className='FilterModal-actions'>

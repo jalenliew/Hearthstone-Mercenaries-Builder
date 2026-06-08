@@ -22,7 +22,7 @@ public class CardsRequest extends HearthstoneRequest {
     private String sort = "name:asc";
 
     private String textFilter;
-    private String set = "standard";
+    private String set;
     private String cardClass;
     private String manaCost;
     private String attack;

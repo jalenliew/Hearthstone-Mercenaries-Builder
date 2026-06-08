@@ -1,8 +1,10 @@
 package com.example.demo.controller;
 
 import com.example.demo.service.BattlenetTokenService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 import java.util.Map;
@@ -10,18 +12,20 @@ import java.util.Map;
 @RestController
 @RequestMapping("/test")
 @CrossOrigin(origins = "http://localhost:5173")
-public class TestController extends BattlenetController {
+public class TestController {
+    protected final BattlenetTokenService tokenService;
+    protected final WebClient webClient = WebClient.create();
 
     public TestController(BattlenetTokenService tokenService) {
-        super(tokenService);
+        this.tokenService = tokenService;
     }
 
     @GetMapping("/raw")
     public Mono<Object> raw(@RequestParam String path, @RequestParam Map<String, String> params) {
-        String region = params.getOrDefault("region", defaultRegion);
+        String region = params.getOrDefault("region", "us");
 
         UriComponentsBuilder builder = UriComponentsBuilder
-            .fromHttpUrl(getHost(region) + path);
+            .fromHttpUrl("https://" + region + ".api.blizzard.com" + path);
 
         params.forEach((key, value) -> {
             if (!key.equals("region") && !key.equals("path")) {
