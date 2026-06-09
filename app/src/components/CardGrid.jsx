@@ -4,7 +4,7 @@ import '../styles/components/CardGrid.scss';
 
 const PREFETCH_NEIGHBORS = 2;
 
-const CardGrid = ({ pageSize = 16, filterParams = {}, sortOption = 'name', isAscending = true, searchValue = '', gameMode = 'constructed', onCardClick }) => {
+const CardGrid = ({ pageSize = 16, filterParams = {}, sortOption = 'name', isAscending = true, isGroupByClass = false, searchValue = '', gameMode = 'constructed', onCardClick }) => {
     const [pageNumber, setPageNumber] = useState(1);
     const [cardPage, setCardPage] = useState([]);
     const [maxPages, setMaxPages] = useState(0);
@@ -16,12 +16,12 @@ const CardGrid = ({ pageSize = 16, filterParams = {}, sortOption = 'name', isAsc
         region: 'us',
         page,
         pageSize,
-        sort: isAscending ? `${sortOption}:asc` : `${sortOption}:desc`,
+        sort: `${sortOption}` + (isAscending ? ':asc' : ':desc') + (isGroupByClass ? ',groupByClass' + (isAscending ? ':asc' : ':desc') : ''),
         locale: 'en_US',
         textFilter: searchValue,
         gameMode,
         ...filterParams
-    }), [pageSize, isAscending, sortOption, searchValue, gameMode, filterParams]);
+    }), [pageSize, isAscending, isGroupByClass, sortOption, searchValue, gameMode, filterParams]);
 
     const cacheKey = useCallback((page) => {
         return JSON.stringify(buildParams(page));

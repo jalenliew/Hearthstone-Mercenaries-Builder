@@ -14,12 +14,12 @@ const sortOptions = [
     { value: 'health',       label: 'Health' },
     { value: 'dateAdded',    label: 'Date Added' },
     { value: 'class',        label: 'Class' },
-    { value: 'groupByClass', label: 'Group By Class' },
 ];
 
 const CardListPage = ({ pageSize, onCardClick }) => {
     const [sortOption, setSortOption] = useState('name');
     const [isAscending, setIsAscending] = useState(true);
+    const [isGroupByClass, setIsGroupByClass] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [filterParams, setFilterParams] = useState({});
     const [filterModalOpen, setFilterModalOpen] = useState(false);
@@ -66,6 +66,8 @@ const CardListPage = ({ pageSize, onCardClick }) => {
                     <label htmlFor='asc'>Ascending</label>
                     <input type='radio' id='desc' checked={!isAscending} onChange={() => handleSort(false)} />
                     <label htmlFor='desc'>Descending</label>
+                    <input type='checkbox' id='groupBy' checked={isGroupByClass} onChange={() => setIsGroupByClass(!isGroupByClass)} />
+                    <label htmlFor='groupBy'>Group By Class</label>
                 </div>
                 <Searchbar onClick={(value) => setSearchValue(value)} />
                 <Button text='Filters' onClick={() => setFilterModalOpen(true)} />
@@ -76,6 +78,7 @@ const CardListPage = ({ pageSize, onCardClick }) => {
                 filterParams={filterParams}
                 sortOption={sortOption}
                 isAscending={isAscending}
+                isGroupByClass={isGroupByClass}
                 searchValue={searchValue}
                 gameMode='constructed'
                 onCardClick={handleCardClick}
