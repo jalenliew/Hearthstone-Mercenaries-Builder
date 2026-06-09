@@ -11,6 +11,16 @@ const FilterModal = ({ isOpen, onClose, onApply, onReset, gameMode = 'constructe
     const [collectible, setCollectible] = useState('1');
     const hasFetched = useRef(false);
 
+    const FIELD_MAP = {
+        cardSetId:     'set',
+        rarityId:      'rarity',
+        cardTypeId:    'type',
+        spellSchoolId: 'spellSchool',
+        minionTypeId:  'minionType',
+        keywordId:     'keyword',
+        classId:       'cardClass',
+    };
+
     useEffect(() => {
         if (!isOpen || hasFetched.current) return;
         const fetchOptions = async () => {
@@ -82,17 +92,23 @@ const FilterModal = ({ isOpen, onClose, onApply, onReset, gameMode = 'constructe
     };
 
     const handleApply = () => {
-        const filters = { collectible };
+        const rawFilters = { collectible };
 
         Object.entries(selectedChips).forEach(([field, slugs]) => {
-            if (slugs.length > 0) filters[field] = slugs;
+            if (slugs.length > 0) rawFilters[field] = slugs;
         });
 
         filterOptions?.numericFields.forEach(({ field, min, max }) => {
             const [selectedMin, selectedMax] = numericValues[field] || [min, max];
             if (selectedMin !== min || selectedMax !== max) {
-                filters[field] = rangeToArray(selectedMin, selectedMax);
+                rawFilters[field] = rangeToArray(selectedMin, selectedMax);
             }
+        });
+
+        const filters = {};
+        Object.entries(rawFilters).forEach(([field, value]) => {
+            const mappedKey = FIELD_MAP[field] || field;
+            filters[mappedKey] = value;
         });
 
         onApply(filters);

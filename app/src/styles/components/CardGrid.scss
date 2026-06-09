@@ -1,0 +1,137 @@
+.CardGrid {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.CardGrid-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-rows: repeat(2, 1fr);
+    grid-auto-rows: 0;
+    overflow: hidden;
+    gap: 0.5rem;
+    padding: 0.25rem 1rem;
+    min-height: 0;
+    box-sizing: border-box;
+    transition: opacity 0.2s ease;
+
+    &.is-loading {
+        opacity: 0.5;
+        pointer-events: none;
+    }
+}
+
+.CardGrid-card {
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.CardGrid-cardImage {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    cursor: pointer;
+    transition: transform 0.15s ease;
+
+    &:hover {
+        transform: scale(1.03);
+    }
+}
+
+.CardGrid-empty {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    grid-column: 1 / -1;
+}
+
+.CardGrid-pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    box-sizing: border-box;
+    border-top: 1px solid #eee;
+}
+
+.CardGrid-paginationPages {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.CardGrid-pageButton {
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+        background-color: #f0f0f0;
+        border-color: #999;
+    }
+
+    &.is-active {
+        background-color: #333;
+        color: white;
+        border-color: #333;
+        font-weight: bold;
+    }
+}
+
+.CardGrid-arrowButton {
+    min-width: 2rem;
+    height: 2rem;
+    padding: 0 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: background-color 0.15s ease;
+
+    &:hover:not(:disabled) {
+        background-color: #f0f0f0;
+        border-color: #999;
+    }
+
+    &:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+    }
+}
+
+.CardGrid-ellipsis {
+    padding: 0 0.25rem;
+    color: #999;
+    user-select: none;
+}
+
+.CardGrid-pageInput {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.9rem;
+    color: #555;
+
+    input {
+        width: 3rem;
+        height: 2rem;
+        text-align: center;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        padding: 0 0.25rem;
+    }
+}
