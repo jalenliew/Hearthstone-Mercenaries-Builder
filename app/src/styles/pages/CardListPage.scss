@@ -25,3 +25,29 @@
     width: 8rem;
     margin: 0 1rem;
 }
+
+.CardList-gameModes {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.CardList-gameModeButton {
+    padding: 0.3rem 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 999px;
+    background: white;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+
+    &:hover {
+        border-color: #888;
+        background: #f5f5f5;
+    }
+
+    &.is-active {
+        background: #333;
+        color: white;
+        border-color: #333;
+    }
+}

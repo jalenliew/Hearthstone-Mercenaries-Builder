@@ -22,6 +22,9 @@ public class CardsController extends HearthstoneController {
     public Mono<ApiResponse<Page>> getPage(
         @Valid @ModelAttribute CardsRequest request
     ) {
+        if (request.getGameMode() != "constructed") {
+            request.setCollectible("0");
+        }
         return makeRequest(request, PATH, Page.class)
             .map(ApiResponse::ok);
     }
@@ -31,6 +34,9 @@ public class CardsController extends HearthstoneController {
         @PathVariable String idorslug,
         @Valid @ModelAttribute CardsRequest request
     ) {
+        if (request.getGameMode() != "constructed") {
+            request.setCollectible("0");
+        }
         return makeRequest(request, PATH + "/" + idorslug, Card.class)
             .map(ApiResponse::ok);
     }

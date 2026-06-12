@@ -95,7 +95,7 @@ const CardGrid = ({ pageSize = 16, filterParams = {}, sortOption = 'name', isAsc
                     return (
                         <div className='CardGrid-card' id={card.id} key={card.id}>
                             <img
-                                src={card.image?.value || card.image}
+                                src={card.image?.value || card.image || card.imageGold || card.cropImage}
                                 className='CardGrid-cardImage'
                                 onClick={() => onCardClick?.(card)}
                                 alt={card.name}

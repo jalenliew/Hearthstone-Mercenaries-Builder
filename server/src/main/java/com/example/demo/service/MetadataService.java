@@ -7,8 +7,8 @@ import com.example.demo.model.response.FilterResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,6 +26,10 @@ public class MetadataService {
         "minionTypeId",  "minionTypes",
         "keywordId",     "keywords",
         "classId",       "classes"
+    );
+
+    private static final List<String> MANUAL_SELECTABLE_FIELDS = List.of(
+        "classId", "keywordId", "minionTypeId"
     );
 
     @Autowired
@@ -47,10 +51,28 @@ public class MetadataService {
             new ParameterizedTypeReference<List<String>>() {}
         );
 
-        return Mono.zip(numericFieldsMono, filterableFieldsMono)
+        Mono<List<HeroClass>> classesMono = battlenetService.makeRequestWithParams(
+            params, HEARTHSTONE_METADATA + "/classes",
+            new ParameterizedTypeReference<List<HeroClass>>() {}
+        );
+
+        Mono<List<Keyword>> keywordsMono = battlenetService.makeRequestWithParams(
+            params, HEARTHSTONE_METADATA + "/keywords",
+            new ParameterizedTypeReference<List<Keyword>>() {}
+        );
+
+        Mono<List<MetadataGM>> minionTypesMono = battlenetService.makeRequestWithParams(
+            params, HEARTHSTONE_METADATA + "/minionTypes",
+            new ParameterizedTypeReference<List<MetadataGM>>() {}
+        );
+
+        return Mono.zip(numericFieldsMono, filterableFieldsMono, classesMono, keywordsMono, minionTypesMono)
             .flatMap(tuple -> {
                 List<String> numericFields = tuple.getT1();
                 List<String> filterableFields = tuple.getT2();
+                List<HeroClass> classes = tuple.getT3();
+                List<Keyword> keywords = tuple.getT4();
+                List<MetadataGM> minionTypes = tuple.getT5();
 
                 List<String> selectableFieldNames = filterableFields.stream()
                     .filter(f -> !numericFields.contains(f) && !f.equals("collectible"))
@@ -64,21 +86,52 @@ public class MetadataService {
                     .map(field -> getSelectableOptions(params, field))
                     .collect(Collectors.toList());
 
+                Mono<FilterOption> classesOption = Mono.just(
+                    new FilterOption("classId", "Class",
+                        classes.stream()
+                            .map(c -> (Metadata) c)
+                            .collect(Collectors.toList()))
+                );
+
+                Mono<FilterOption> keywordsOption = Mono.just(
+                    new FilterOption("keywordId", "Keyword",
+                        keywords.stream()
+                            .map(k -> (Metadata) k)
+                            .collect(Collectors.toList()))
+                );
+
+                Mono<FilterOption> minionTypesOption = Mono.just(
+                    new FilterOption("minionTypeId", "Minion Type",
+                        minionTypes.stream()
+                            .map(m -> (Metadata) m)
+                            .collect(Collectors.toList()))
+                );
+
                 List<Mono<FilterOption>> allMonos = new ArrayList<>();
                 allMonos.addAll(numericMonos);
                 allMonos.addAll(selectableMonos);
+                allMonos.add(classesOption);
+                allMonos.add(keywordsOption);
+                allMonos.add(minionTypesOption);
+
+                List<String> allSelectableNames = new ArrayList<>(selectableFieldNames);
+                allSelectableNames.addAll(MANUAL_SELECTABLE_FIELDS);
 
                 return Flux.merge(allMonos)
                     .collectList()
                     .map(options -> {
                         List<FilterOption> numeric = options.stream()
                             .filter(o -> o.getMin() != null)
-                            .sorted(Comparator.comparingInt(o -> numericFields.indexOf(o.getField())))
+                            .sorted(Comparator.comparingInt(o ->
+                                numericFields.indexOf(((FilterOption) o).getField())))
                             .collect(Collectors.toList());
 
                         List<FilterOption> selectable = options.stream()
                             .filter(o -> o.getOptions() != null)
-                            .sorted(Comparator.comparingInt(o -> selectableFieldNames.indexOf(o.getField())))
+                            .sorted(Comparator.comparingInt(o -> {
+                                int idx = allSelectableNames.indexOf(((FilterOption) o).getField());
+                                return idx == -1 ? Integer.MAX_VALUE : idx;
+                            }))
                             .collect(Collectors.toList());
 
                         return new FilterResponse(numeric, selectable);
@@ -91,43 +144,44 @@ public class MetadataService {
             Map<String, String> armorParams = new HashMap<>(params);
             armorParams.put("type", "hero");
 
-            Mono<Map> armorMono = battlenetService.makeRequestWithParams(armorParams, "/hearthstone/cards", Map.class);
-            return armorMono.map(value -> {
-                return extractArmorValues(value, field);
-            });
+            return battlenetService.makeRequestWithParams(armorParams, "/hearthstone/cards", Map.class)
+                .map(response -> extractArmorValues(response, field));
         }
 
         Map<String, String> ascParams = new HashMap<>(params);
         ascParams.put("sort", field + ":asc");
+        ascParams.put("type", "minion,weapon");
+        ascParams.put("pageSize", "1");
+        ascParams.put("page", "1");
+
         Map<String, String> descParams = new HashMap<>(params);
         descParams.put("sort", field + ":desc");
-        ascParams.put("type", "minion,weapon");
         descParams.put("type", "minion,weapon");
+        descParams.put("pageSize", "1");
+        descParams.put("page", "1");
 
-        Mono<Map> ascMono = battlenetService.makeRequestWithParams(ascParams, "/hearthstone/cards", Map.class);
-        Mono<Map> descMono = battlenetService.makeRequestWithParams(descParams, "/hearthstone/cards", Map.class);
-
-        return Mono.zip(ascMono, descMono)
-            .map(tuple -> {
-                int min = extractStatValue(tuple.getT1(), field);
-                int max = extractStatValue(tuple.getT2(), field);
-                return new FilterOption(field, formatLabel(field), min, max);
-            });
+        return Mono.zip(
+            battlenetService.makeRequestWithParams(ascParams, "/hearthstone/cards", Map.class),
+            battlenetService.makeRequestWithParams(descParams, "/hearthstone/cards", Map.class)
+        ).map(tuple -> {
+            int min = extractStatValue(tuple.getT1(), field);
+            int max = extractStatValue(tuple.getT2(), field);
+            return new FilterOption(field, formatLabel(field), min, max);
+        });
     }
 
     private int extractStatValue(Map response, String field) {
         try {
             List<Map> cards = (List<Map>) response.get("cards");
             if (cards == null || cards.isEmpty()) return 0;
-            cards = cards.stream().filter(card -> card.get(field) != null).collect(Collectors.toList());
-            for (Map card : cards) {
-                Object val = card.get(field);
-                if (val != null) return ((Number) val).intValue();
-            }
+            return cards.stream()
+                .filter(card -> card.get(field) != null)
+                .map(card -> ((Number) card.get(field)).intValue())
+                .findFirst()
+                .orElse(0);
         } catch (Exception e) {
             return 0;
         }
-        return 0;
     }
 
     private FilterOption extractArmorValues(Map response, String field) {
@@ -135,19 +189,15 @@ public class MetadataService {
             FilterOption res = new FilterOption(field, formatLabel(field), 0, 0);
             List<Map> cards = (List<Map>) response.get("cards");
             if (cards == null || cards.isEmpty()) return res;
-            cards = cards.stream().filter(card -> card.get(field) != null).collect(Collectors.toList());
-            for (Map card : cards) {
-                Object val = card.get(field);
-                if (val != null) {
-                    int value = ((Number) val).intValue();
-                    if (value > res.getMax()) {
-                        res.setMax(value);
-                    }
-                    if (value < res.getMin()) {
-                        res.setMin(value);
-                    }
-                }
-            }
+
+            List<Integer> values = cards.stream()
+                .filter(card -> card.get(field) != null)
+                .map(card -> ((Number) card.get(field)).intValue())
+                .collect(Collectors.toList());
+
+            if (values.isEmpty()) return res;
+            res.setMin(Collections.min(values));
+            res.setMax(Collections.max(values));
             return res;
         } catch (Exception e) {
             return new FilterOption(field, formatLabel(field), 0, 0);
@@ -168,12 +218,7 @@ public class MetadataService {
     }
 
     private String formatLabel(String field) {
-        return field
-            .replaceAll("Id$", "")
-            .replaceAll("([a-z])([A-Z])", "$1 $2")
-            .substring(0, 1).toUpperCase()
-            + field.replaceAll("Id$", "")
-                   .replaceAll("([a-z])([A-Z])", "$1 $2")
-                   .substring(1);
+        String stripped = field.replaceAll("Id$", "").replaceAll("([a-z])([A-Z])", "$1 $2");
+        return stripped.substring(0, 1).toUpperCase() + stripped.substring(1);
     }
 }

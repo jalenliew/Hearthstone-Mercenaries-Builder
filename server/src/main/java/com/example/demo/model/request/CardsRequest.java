@@ -3,6 +3,7 @@ package com.example.demo.model.request;
 import jakarta.validation.constraints.*;
 import lombok.Getter;
 import lombok.Setter;
+import java.util.List;
 
 @Getter
 @Setter

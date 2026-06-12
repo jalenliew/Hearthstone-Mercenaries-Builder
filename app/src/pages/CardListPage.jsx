@@ -14,15 +14,22 @@ const sortOptions = [
     { value: 'health',       label: 'Health' },
     { value: 'dateAdded',    label: 'Date Added' },
     { value: 'class',        label: 'Class' },
+    { value: 'groupByClass', label: 'Group By Class' },
+];
+
+const GAME_MODES = [
+    { value: 'constructed',   label: 'Constructed' },
+    { value: 'battlegrounds', label: 'Battlegrounds' },
+    { value: 'mercenaries',   label: 'Mercenaries' },
 ];
 
 const CardListPage = ({ pageSize, onCardClick }) => {
     const [sortOption, setSortOption] = useState('name');
     const [isAscending, setIsAscending] = useState(true);
-    const [isGroupByClass, setIsGroupByClass] = useState(false);
     const [searchValue, setSearchValue] = useState('');
     const [filterParams, setFilterParams] = useState({});
     const [filterModalOpen, setFilterModalOpen] = useState(false);
+    const [gameMode, setGameMode] = useState('constructed');
 
     const navigate = useNavigate();
 
@@ -32,6 +39,11 @@ const CardListPage = ({ pageSize, onCardClick }) => {
         } else {
             setSortOption(value.value);
         }
+    };
+
+    const handleGameModeChange = (mode) => {
+        setGameMode(mode);
+        setFilterParams({});
     };
 
     const handleCardClick = (card) => {
@@ -45,14 +57,26 @@ const CardListPage = ({ pageSize, onCardClick }) => {
     return (
         <div className='CardList'>
             <FilterModal
+                key={gameMode}
                 isOpen={filterModalOpen}
                 onClose={() => setFilterModalOpen(false)}
                 onApply={(filters) => setFilterParams(filters)}
                 onReset={() => setFilterParams({})}
-                gameMode='constructed'
+                gameMode={gameMode}
             />
 
             <div className='CardList-controls'>
+                <div className='CardList-gameModes'>
+                    {GAME_MODES.map(({ value, label }) => (
+                        <button
+                            key={value}
+                            className={`CardList-gameModeButton ${gameMode === value ? 'is-active' : ''}`}
+                            onClick={() => handleGameModeChange(value)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
                 <div className='CardList-sort'>
                     <label htmlFor='sortSelect'>Sort by:</label>
                     <Select
@@ -66,8 +90,6 @@ const CardListPage = ({ pageSize, onCardClick }) => {
                     <label htmlFor='asc'>Ascending</label>
                     <input type='radio' id='desc' checked={!isAscending} onChange={() => handleSort(false)} />
                     <label htmlFor='desc'>Descending</label>
-                    <input type='checkbox' id='groupBy' checked={isGroupByClass} onChange={() => setIsGroupByClass(!isGroupByClass)} />
-                    <label htmlFor='groupBy'>Group By Class</label>
                 </div>
                 <Searchbar onClick={(value) => setSearchValue(value)} />
                 <Button text='Filters' onClick={() => setFilterModalOpen(true)} />
@@ -78,9 +100,8 @@ const CardListPage = ({ pageSize, onCardClick }) => {
                 filterParams={filterParams}
                 sortOption={sortOption}
                 isAscending={isAscending}
-                isGroupByClass={isGroupByClass}
                 searchValue={searchValue}
-                gameMode='constructed'
+                gameMode={gameMode}
                 onCardClick={handleCardClick}
             />
         </div>
