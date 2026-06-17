@@ -22,7 +22,7 @@ public class CardsController extends HearthstoneController {
     public Mono<ApiResponse<Page>> getPage(
         @Valid @ModelAttribute CardsRequest request
     ) {
-        if (request.getGameMode() != "constructed") {
+        if (!request.getGameMode().equals("constructed")) {
             request.setCollectible("0");
         }
         return makeRequest(request, PATH, Page.class)

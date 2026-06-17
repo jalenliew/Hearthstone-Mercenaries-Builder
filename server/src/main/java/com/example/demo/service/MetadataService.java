@@ -4,6 +4,7 @@ import com.example.demo.model.metadata.*;
 import com.example.demo.model.request.MetadataRequest;
 import com.example.demo.model.response.FilterOption;
 import com.example.demo.model.response.FilterResponse;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.stereotype.Service;
@@ -35,11 +36,15 @@ public class MetadataService {
     @Autowired
     private BattlenetService battlenetService;
 
+    @Value("${battlenet.region}")
+    private String defaultRegion;
+
     public Mono<FilterResponse> getFilterOptions(MetadataRequest request) {
-        Map<String, String> params = Map.of(
-            "region", request.getRegion() != null ? request.getRegion() : "us",
-            "locale", request.getLocale() != null ? request.getLocale() : "en_US"
-        );
+        Map<String, String> params = new HashMap<>();
+        params.put("region", request.getRegion() != null ? request.getRegion() : defaultRegion);
+        if (request.getLocale() != null) {
+            params.put("locale", request.getLocale());
+        }
 
         Mono<List<String>> numericFieldsMono = battlenetService.makeRequestWithParams(
             params, HEARTHSTONE_METADATA + "/numericFields",
@@ -49,6 +54,11 @@ public class MetadataService {
         Mono<List<String>> filterableFieldsMono = battlenetService.makeRequestWithParams(
             params, HEARTHSTONE_METADATA + "/filterableFields",
             new ParameterizedTypeReference<List<String>>() {}
+        );
+
+        Mono<List<SetGroup>> setGroupsMono = battlenetService.makeRequestWithParams(
+            params, HEARTHSTONE_METADATA + "/setGroups",
+            new ParameterizedTypeReference<List<SetGroup>>() {}
         );
 
         Mono<List<HeroClass>> classesMono = battlenetService.makeRequestWithParams(
@@ -66,13 +76,14 @@ public class MetadataService {
             new ParameterizedTypeReference<List<MetadataGM>>() {}
         );
 
-        return Mono.zip(numericFieldsMono, filterableFieldsMono, classesMono, keywordsMono, minionTypesMono)
+        return Mono.zip(numericFieldsMono, filterableFieldsMono, setGroupsMono, classesMono, keywordsMono, minionTypesMono)
             .flatMap(tuple -> {
                 List<String> numericFields = tuple.getT1();
                 List<String> filterableFields = tuple.getT2();
-                List<HeroClass> classes = tuple.getT3();
-                List<Keyword> keywords = tuple.getT4();
-                List<MetadataGM> minionTypes = tuple.getT5();
+                List<SetGroup> setGroups = tuple.getT3();
+                List<HeroClass> classes = tuple.getT4();
+                List<Keyword> keywords = tuple.getT5();
+                List<MetadataGM> minionTypes = tuple.getT6();
 
                 List<String> selectableFieldNames = filterableFields.stream()
                     .filter(f -> !numericFields.contains(f) && !f.equals("collectible"))
@@ -134,7 +145,7 @@ public class MetadataService {
                             }))
                             .collect(Collectors.toList());
 
-                        return new FilterResponse(numeric, selectable);
+                        return new FilterResponse(numeric, selectable, setGroups);
                     });
             });
     }

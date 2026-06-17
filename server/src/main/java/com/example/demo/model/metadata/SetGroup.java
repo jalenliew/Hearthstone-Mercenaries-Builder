@@ -1,5 +1,6 @@
 package com.example.demo.model.metadata;
 
+import com.example.demo.model.LocalizedString;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
@@ -16,7 +17,7 @@ public class SetGroup {
     private int year;
     private String svg;
     private List<String> cardSets;
-    private String name;
+    private LocalizedString name;
     private boolean standard;
     private String icon;
 }

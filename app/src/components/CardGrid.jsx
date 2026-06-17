@@ -38,7 +38,21 @@ const CardGrid = ({ pageSize = 16, filterParams = {}, sortOption = 'name', isAsc
         return data;
     }, [buildParams, cacheKey]);
 
-    // reset page and cache when any param changes
+    const resolveImage = (card, locale = 'en_US') => {
+        if (!card) return '';
+        if (card.image?.value) {
+            return card.image?.value;
+        } else if (card.image?.values) {
+            return card.image?.values[locale];
+        } else if (card.imageGold?.value) {
+            return card.imageGold?.value;
+        } else if (card.imageGold?.values) {
+            return card.imageGold?.values[locale];
+        } else {
+            return '';
+        }
+    };
+
     useEffect(() => {
         cache.current = {};
         setPageNumber(1);
@@ -95,10 +109,10 @@ const CardGrid = ({ pageSize = 16, filterParams = {}, sortOption = 'name', isAsc
                     return (
                         <div className='CardGrid-card' id={card.id} key={card.id}>
                             <img
-                                src={card.image?.value || card.image || card.imageGold || card.cropImage}
+                                src={resolveImage(card)}
                                 className='CardGrid-cardImage'
                                 onClick={() => onCardClick?.(card)}
-                                alt={card.name}
+                                alt={card.name?.value || card.name?.values}
                             />
                         </div>
                     );
