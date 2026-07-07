@@ -24,6 +24,7 @@ public class CardsController extends HearthstoneController {
     ) {
         if (!request.getGameMode().equals("constructed")) {
             request.setCollectible("0");
+            request.setSet(null);
         }
         return makeRequest(request, PATH, Page.class)
             .map(ApiResponse::ok);
@@ -36,6 +37,7 @@ public class CardsController extends HearthstoneController {
     ) {
         if (request.getGameMode() != "constructed") {
             request.setCollectible("0");
+            request.setSet(null);
         }
         return makeRequest(request, PATH + "/" + idorslug, Card.class)
             .map(ApiResponse::ok);

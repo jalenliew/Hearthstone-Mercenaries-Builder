@@ -40,14 +40,21 @@ const CardGrid = ({ pageSize = 16, filterParams = {}, sortOption = 'name', isAsc
 
     const resolveImage = (card, locale = 'en_US') => {
         if (!card) return '';
+        if (gameMode == 'battlegrounds') {
+            if (card.battlegrounds?.image) {
+                return card.battlegrounds.image;
+            } else if (card.battlegrounds?.imageGold) {
+                return card.battlegrounds.imageGold;
+            }
+        }
         if (card.image?.value) {
-            return card.image?.value;
+            return card.image.value;
         } else if (card.image?.values) {
-            return card.image?.values[locale];
+            return card.image.values[locale];
         } else if (card.imageGold?.value) {
-            return card.imageGold?.value;
+            return card.imageGold.value;
         } else if (card.imageGold?.values) {
-            return card.imageGold?.values[locale];
+            return card.imageGold.values[locale];
         } else {
             return '';
         }
@@ -106,14 +113,21 @@ const CardGrid = ({ pageSize = 16, filterParams = {}, sortOption = 'name', isAsc
             <div className={`CardGrid-grid ${isLoading ? 'is-loading' : ''}`}>
                 {cardPage.map((card) => {
                     if (card === 'N/A') return <h2 key='na' className='CardGrid-empty'>No Cards Found</h2>;
+                    const src = resolveImage(card);
                     return (
-                        <div className='CardGrid-card' id={card.id} key={card.id}>
+                        <div className={`CardGrid-card ${src == "" ? "CardGrid-card--notFound" : ""}`} id={card.id} key={card.id}>
                             <img
-                                src={resolveImage(card)}
+                                src={src}
                                 className='CardGrid-cardImage'
                                 onClick={() => onCardClick?.(card)}
                                 alt={card.name?.value || card.name?.values}
                             />
+                            <div className='CardGrid-cardName'>
+                                {card.name?.value || card.name?.values}
+                                <div className='CardGrid-imageDisclaimer'>
+                                    *Image Not Found*
+                                </div>
+                            </div>
                         </div>
                     );
                 })}

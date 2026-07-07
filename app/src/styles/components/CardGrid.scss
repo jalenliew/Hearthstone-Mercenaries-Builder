@@ -28,6 +28,19 @@
     justify-content: center;
     overflow: hidden;
     min-height: 0;
+
+    &--notFound {
+        border: 1px black solid;
+        .CardGrid-cardImage {
+            display: none;
+        }
+        .CardGrid-cardName {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+    }
 }
 
 .CardGrid-cardImage {
@@ -40,6 +53,14 @@
     &:hover {
         transform: scale(1.03);
     }
+}
+
+.CardGrid-cardName {
+    display: none;
+}
+
+.CardGrid-imageDisclaimer {
+    color: red;
 }
 
 .CardGrid-empty {
